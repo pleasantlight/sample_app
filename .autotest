@@ -1,0 +1,4 @@
+Autotest.add_hook :initialize do |at|
+  %w{.svn .hg .git vendor public log .idea}.each{|exception| at.add_exception(exception)}
+end
+

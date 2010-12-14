@@ -64,6 +64,14 @@ describe UsersController do
       get :new
       response.should have_selector("title", :content => "Sign Up")
     end
+
+    it "should fail if already signed in" do
+      @user = Factory(:user)
+      test_sign_in(@user)
+      post :create, :user => {  :name => "New User", :email => "user@example.com",
+                                :password => "foobar", :password_confirmation => "foobar"  }
+      response.should redirect_to(root_path)
+    end
   end
 
   describe "POST 'create'" do
@@ -98,7 +106,7 @@ describe UsersController do
                    :password => "foobar", :password_confirmation => "foobar"  }
       end
 
-      it "should create a use" do
+      it "should create a user" do
         lambda do
           post :create, :user => @attr
         end.should change(User, :count).by(1)
@@ -112,6 +120,16 @@ describe UsersController do
       it "should have a welcome message" do
         post :create, :user => @attr
         flash[:success].should =~ /welcome to the sample app/i
+      end
+    end
+
+    describe "Signed In" do
+      it "should fail if already signed in" do
+        @user = Factory(:user)
+        test_sign_in(@user)
+        post :create, :user => {  :name => "New User", :email => "user@example.com",
+                                  :password => "foobar", :password_confirmation => "foobar"  }
+        response.should redirect_to(root_path)
       end
     end
   end
@@ -136,7 +154,7 @@ describe UsersController do
     it "should have a link to change the gravatar" do
       get :edit, :id => @user
       gravatar_url = "http://gravatar.com/emails"
-      response.should have_selector("a", :href => gravatar_url, :content => "change")
+      response.should have_selector("a", :href => gravatar_url, :content => "Change")
     end
   end
 
@@ -275,6 +293,24 @@ describe UsersController do
         response.should have_selector("a", :href => "/users?page=2", :content => "2")
         response.should have_selector("a", :href => "/users?page=2", :content => "Next")
       end
+
+      it "should not show the 'delete' links" do
+        get :index
+        response.should_not have_selector("a", :content => "delete")
+      end
+    end
+
+    describe "as an admin user" do
+
+      before(:each) do
+        admin = Factory(:user, :email => "admin@example.com", :admin => true)
+        test_sign_in(admin)
+      end
+
+      it "should show the 'delete' links" do
+        get :index
+        response.should have_selector("a", :content => "delete")
+      end
     end
   end
 
@@ -295,8 +331,8 @@ describe UsersController do
     describe "as an admin user" do
 
       before(:each) do
-        admin = Factory(:user, :email => "admin@example.com", :admin => true)
-        test_sign_in(admin)
+        @admin = Factory(:user, :email => "admin@example.com", :admin => true)
+        test_sign_in(@admin)
       end
 
       it "should destroy the user" do
@@ -308,6 +344,12 @@ describe UsersController do
       it "should redirect to the users page" do
         delete :destroy, :id => @user
         response.should redirect_to(users_path)
+      end
+
+      it "should not allow user to destroy itself" do
+        delete :destroy, :id => @admin
+        flash[:error].should =~ /delete own user/i
+        response.should redirect_to(@admin)
       end
     end
   end

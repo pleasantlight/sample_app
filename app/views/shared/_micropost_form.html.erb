@@ -1,0 +1,16 @@
+<%= form_for @micropost do |f| %>
+    <%= render 'shared/error_messages', :object => f.object %>
+    <script type="text/javascript" charset="utf-8"> 
+        $(document).ready(function()
+        {
+          $('#micropost_content').simplyCountable( { strictMax: true } );
+        });
+    </script>
+    <div class="counter_frame round" id="counter"></div>
+    <div class="field">
+      <%= f.text_area :content %>
+    </div>
+    <div class="actions">
+      <%= f.submit "Submit" %>
+    </div>
+<% end %>
